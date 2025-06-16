@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Lab07",
-    "slug": "Lab07",
+    "name": "Expense Tracker",
+    "slug": "Expense Tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
