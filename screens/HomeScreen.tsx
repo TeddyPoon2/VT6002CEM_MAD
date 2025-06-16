@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import ShowModal from './ShowModal';
 import { getExpenses, saveExpenses, getAccounts, saveAccounts } from './storage';
 import { Account, Expense } from '../types';
 
 const HomeScreen = () => {
+  // Confirm delete modal state
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'expense' | 'account'; id: string } | null>(null);
+
   // const API_URL = 'http://localhost:3000';
   // const navigation = useNavigation();
 
@@ -140,6 +144,10 @@ const HomeScreen = () => {
       if (selectedAccount === id && updated.length > 0) {
         setSelectedAccount(updated[0].id ?? '');
       }
+      // Delete all expenses associated with this account
+      const updatedExpenses = expenses.filter((e) => e.accountId === id);
+      setExpenses(updatedExpenses);
+      await saveExpenses(updatedExpenses);
     } catch (error) {
       Alert.alert('Error', 'Failed to delete account.');
     }
@@ -176,7 +184,10 @@ const HomeScreen = () => {
         <Text style={styles.title}>{item.category || 'Expense'}</Text>
         <Text style={styles.description}>${item.amount} - {item.description}</Text>
         <Text style={styles.meta}>{date.toLocaleDateString()} {date.toLocaleTimeString()}</Text>
-        <TouchableOpacity onPress={() => handleDeleteExpense(item.id ?? '')}>
+        <TouchableOpacity onPress={() => {
+          setDeleteTarget({ type: 'expense', id: item.id ?? '' });
+          setConfirmVisible(true);
+        }}>
           <Text style={{ color: 'red', marginTop: 4 }}>Delete</Text>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -184,13 +195,13 @@ const HomeScreen = () => {
   };
 
   const renderAccount = ({ item }: { item: Account }) => (
-    <TouchableOpacity style={styles.itemContainer} onPress={() => setSelectedAccount(item.id ?? '')}>
+    <TouchableOpacity style={styles.itemContainer} onPress={() => handleAccountPress(item)}>
       <Text style={styles.title}>{item.name} ({item.type})</Text>
       <Text style={styles.meta}>Balance: ${item.balance || 0}</Text>
-      <TouchableOpacity onPress={() => handleAccountPress(item)}>
-        <Text style={{ color: 'blue', marginTop: 4 }}>Edit</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleDeleteAccount(item.id ?? '')}>
+      <TouchableOpacity onPress={() => {
+        setDeleteTarget({ type: 'account', id: item.id ?? '' });
+        setConfirmVisible(true);
+      }}>
         <Text style={{ color: 'red', marginTop: 4 }}>Delete</Text>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -213,7 +224,7 @@ const HomeScreen = () => {
         keyExtractor={(item) => item.id ? item.id : ''}
         horizontal
         extraData={selectedAccount}
-        style={{ maxHeight: 120, }}
+        style={{ maxHeight: 90, }}
         ItemSeparatorComponent={() => <View style={{ width: 5 }} />}
       />
       <TouchableOpacity style={styles.addButton} onPress={() => { setModalType('account'); setEditItem(null); setModalVisible(true); }}>
@@ -254,11 +265,80 @@ const HomeScreen = () => {
           setEditItem(null);
         }}
       />
+      {/* Global Confirm Delete Modal */}
+      <Modal
+        visible={confirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmVisible(false)}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmContainer}>
+            <Text style={styles.confirmText}>Are you sure you want to delete this {deleteTarget?.type}?</Text>
+            {deleteTarget?.type === 'account' && (
+            <Text style={styles.confirmText}>This will also delete all expenses associated with it.</Text>
+            )}
+            <View style={{ flexDirection: 'row', marginTop: 20 }}>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: '#d9534f' }]}
+                onPress={async () => {
+                  setConfirmVisible(false);
+                  if (deleteTarget) {
+                    if (deleteTarget.type === 'expense') await handleDeleteExpense(deleteTarget.id);
+                    if (deleteTarget.type === 'account') await handleDeleteAccount(deleteTarget.id);
+                    setDeleteTarget(null);
+                  }
+                }}
+              >
+                <Text style={styles.confirmButtonText}>Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: '#aaa', marginLeft: 10 }]}
+                onPress={() => {
+                  setConfirmVisible(false);
+                  setDeleteTarget(null);
+                }}
+              >
+                <Text style={styles.confirmButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmContainer: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: 300,
+  },
+  confirmText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  confirmButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   container: {
     flex: 1,
     padding: 10,

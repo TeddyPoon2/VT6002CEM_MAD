@@ -189,7 +189,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
                     ) : <Text>No accounts found</Text>}
                   </View>
                   <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                    <Text style={styles.buttonText}>Submit</Text>
+                    <Text style={styles.buttonText}>Save</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.button, styles.closeButton]} onPress={handleClose}>
                     <Text style={styles.buttonText}>Close</Text>
@@ -217,7 +217,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
                     onChangeText={(value) => updateAccountField('balance', value)}
                   />
                   <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                    <Text style={styles.buttonText}>Submit</Text>
+                    <Text style={styles.buttonText}>Save</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.button, styles.closeButton]} onPress={handleClose}>
                     <Text style={styles.buttonText}>Close</Text>
