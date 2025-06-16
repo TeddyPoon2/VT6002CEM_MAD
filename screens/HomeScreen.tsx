@@ -1,18 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl, Modal } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import ShowModal from './ShowModal';
 import { getExpenses, saveExpenses, getAccounts, saveAccounts } from './storage';
 import { Account, Expense } from '../types';
 
 const HomeScreen = () => {
-  // Confirm delete modal state
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'expense' | 'account'; id: string } | null>(null);
-
-  // const API_URL = 'http://localhost:3000';
-  // const navigation = useNavigation();
-
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
@@ -36,7 +30,6 @@ const HomeScreen = () => {
         setSelectedAccount(result[0].id!);
       }
     } catch (error) {
-      console.error("Failed to load accounts:", error);
       Alert.alert('Error', 'Failed to load accounts.');
     }
   };
@@ -48,7 +41,6 @@ const HomeScreen = () => {
       const result = await getExpenses();
       setExpenses(result);
     } catch (error) {
-      console.error("Failed to load expenses:", error);
       Alert.alert('Error', 'Failed to load expenses.');
     } finally {
       setLoading(false);
@@ -79,7 +71,6 @@ const HomeScreen = () => {
       await saveExpenses(updatedExpenses);
       await updateAccountBalance(newExpense.accountId, newExpense.amount);
     } catch (error) {
-      console.error("Failed to add expense:", error);
       Alert.alert('Error', 'Failed to add expense.');
     }
   };
@@ -120,7 +111,6 @@ const HomeScreen = () => {
       const updated = [...accounts, newAccount];
       setAccounts(updated);
       await saveAccounts(updated);
-      setSelectedAccount(newAccount.id);
     } catch (error) {
       Alert.alert('Error', 'Failed to add account.');
     }
@@ -234,7 +224,6 @@ const HomeScreen = () => {
       <Text style={styles.header}>Expenses</Text>
       <FlatList
         data={expenses
-          .filter(e => !selectedAccount || e.accountId === selectedAccount)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
         renderItem={renderExpense}
         keyExtractor={(item) => item.id ? item.id : ''}
