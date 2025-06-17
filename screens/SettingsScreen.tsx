@@ -19,12 +19,25 @@ const SettingsScreen = () => {
   useEffect(() => {
     // Load auth state and backup settings from AsyncStorage
     const loadAuth = async () => {
-      const data = await AsyncStorage.getItem(AUTH_KEY);
-      if (data) setUser(JSON.parse(data));
-      const freq = await AsyncStorage.getItem(BACKUP_FREQ_KEY);
-      if (freq) setBackupFrequency(freq);
-      const last = await AsyncStorage.getItem(LAST_BACKUP_KEY);
-      if (last) setLastBackup(last);
+      try {
+        const [data, freq, last] = await Promise.all([
+          AsyncStorage.getItem(AUTH_KEY),
+          AsyncStorage.getItem(BACKUP_FREQ_KEY),
+          AsyncStorage.getItem(LAST_BACKUP_KEY)
+        ]);
+        
+        if (data) setUser(JSON.parse(data));
+        if (freq) {
+          console.log('Loaded backup frequency:', freq);
+          setBackupFrequency(freq);
+        } else {
+          // If no frequency is set, set default and save it
+          await AsyncStorage.setItem(BACKUP_FREQ_KEY, 'manual');
+        }
+        if (last) setLastBackup(last);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
     };
     loadAuth();
   }, []);
@@ -99,11 +112,6 @@ const SettingsScreen = () => {
     }
   };
 
-
-  useEffect(() => {
-    AsyncStorage.setItem(BACKUP_FREQ_KEY, backupFrequency);
-  }, [backupFrequency]);
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.container}>
@@ -118,30 +126,38 @@ const SettingsScreen = () => {
             <TouchableOpacity style={styles.button} onPress={handleLogout}>
               <Text style={styles.buttonText}>Log Out</Text>
             </TouchableOpacity>
-          {/* Backup & Sync Section */}
-          <View style={{marginTop: 30}}>
-            <Text style={styles.itemHeader}>Backup & Sync</Text>
-            <Text style={styles.label}>Backup Frequency</Text>
-            <View style={styles.frequencyRow}>
-              {['manual','daily','weekly','monthly'].map(freq => (
-                <TouchableOpacity
-                  key={freq}
-                  style={[styles.freqButton, backupFrequency === freq && styles.freqButtonSelected]}
-                  onPress={() => setBackupFrequency(freq)}
-                >
-                  <Text style={[styles.freqButtonText, backupFrequency === freq && styles.freqButtonTextSelected]}>{freq.charAt(0).toUpperCase() + freq.slice(1)}</Text>
-                </TouchableOpacity>
-              ))}
+            {/* Backup & Sync Section */}
+            <View style={{ marginTop: 30 }}>
+              <Text style={styles.itemHeader}>Backup & Sync</Text>
+              <Text style={styles.label}>Backup Frequency</Text>
+              <View style={styles.frequencyRow}>
+                {['manual', 'daily', 'weekly', 'monthly'].map(freq => (
+                  <TouchableOpacity
+                    key={freq}
+                    style={[styles.freqButton, backupFrequency === freq && styles.freqButtonSelected]}
+                    onPress={async () => {
+                      setBackupFrequency(freq);
+                      try {
+                        await AsyncStorage.setItem(BACKUP_FREQ_KEY, freq);
+                        console.log('Frequency set to:', freq);
+                      } catch (error) {
+                        console.error('Error saving frequency:', error);
+                      }
+                    }}
+                  >
+                    <Text style={[styles.freqButtonText, backupFrequency === freq && styles.freqButtonTextSelected]}>{freq.charAt(0).toUpperCase() + freq.slice(1)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity style={styles.button} onPress={handleBackupNow}>
+                <Text style={styles.buttonText}>Backup Now</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button} onPress={handleRestore}>
+                <Text style={styles.buttonText}>Restore Data</Text>
+              </TouchableOpacity>
+              <Text style={styles.status}>Last Backup: {lastBackup ? new Date(lastBackup).toLocaleString() : 'Never'}</Text>
+              {backupStatus ? <Text style={styles.status}>{backupStatus}</Text> : null}
             </View>
-            <TouchableOpacity style={styles.button} onPress={handleBackupNow}>
-              <Text style={styles.buttonText}>Backup Now</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleRestore}>
-              <Text style={styles.buttonText}>Restore Data</Text>
-            </TouchableOpacity>
-            <Text style={styles.status}>Last Backup: {lastBackup ? new Date(lastBackup).toLocaleString() : 'Never'}</Text>
-            {backupStatus ? <Text style={styles.status}>{backupStatus}</Text> : null}
-          </View>
           </>
         ) : (
           <>
