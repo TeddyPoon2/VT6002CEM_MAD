@@ -52,20 +52,24 @@ const HomeScreen = () => {
 
   // update account balance
   const updateAccountBalance = async (accountId: string, amount: number, isDebit = true) => {
-    const accountIndex = accounts.findIndex(acc => acc.id === accountId);
-    if (accountIndex !== -1) {
-      const updatedAccounts = [...accounts];
-      const prevBalance = updatedAccounts[accountIndex].balance || 0;
-      // If isDebit is true, subtract the amount (expense), otherwise add it back (refund)
-      const newBalance = isDebit ? prevBalance - amount : prevBalance + amount;
-      updatedAccounts[accountIndex] = {
-        ...updatedAccounts[accountIndex],
-        balance: newBalance,
-      };
-      setAccounts(updatedAccounts);
-      await saveAccounts(updatedAccounts);
-    }
+    setAccounts(prevAccounts => {
+      const accountIndex = prevAccounts.findIndex(acc => acc.id === accountId);
+      if (accountIndex !== -1) {
+        const updatedAccounts = [...prevAccounts];
+        const prevBalance = updatedAccounts[accountIndex].balance || 0;
+        const newBalance = isDebit ? prevBalance - amount : prevBalance + amount;
+        updatedAccounts[accountIndex] = {
+          ...updatedAccounts[accountIndex],
+          balance: newBalance,
+        };
+        // Save asynchronously, don't await in setState
+        saveAccounts(updatedAccounts);
+        return updatedAccounts;
+      }
+      return prevAccounts;
+    });
   };
+
   // Expense handlers
   const handleAddExpense = async (expense: Expense) => {
     try {
@@ -98,14 +102,19 @@ const HomeScreen = () => {
 
       // Handle account balance updates
       if (originalExpense.accountId !== expense.accountId) {
-        // Account changed - refund the old account
+        // Account changed (possibly also amount changed)
+        // Always refund the original account by the original amount
         await updateAccountBalance(originalExpense.accountId, originalExpense.amount, false);
-        // Debit the new account
+        // Always debit the new account by the new amount
         await updateAccountBalance(expense.accountId, expense.amount, true);
       } else if (originalExpense.amount !== expense.amount) {
-        // Same account but amount changed - adjust the difference
-        await updateAccountBalance(originalExpense.accountId, originalExpense.amount, false);
-        await updateAccountBalance(expense.accountId, expense.amount, true);
+        // Same account, amount changed - adjust only the difference
+        const diff = expense.amount - originalExpense.amount;
+        if (diff > 0) {
+          await updateAccountBalance(expense.accountId, diff, true); // subtract the extra
+        } else if (diff < 0) {
+          await updateAccountBalance(expense.accountId, -diff, false); // add back the difference
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to update expense.');
