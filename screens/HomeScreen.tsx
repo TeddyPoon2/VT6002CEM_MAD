@@ -69,7 +69,7 @@ const HomeScreen = () => {
   // Expense handlers
   const handleAddExpense = async (expense: Expense) => {
     try {
-      const newExpense = { ...expense, accountId: selectedAccount || '', id: Date.now().toString() };
+      const newExpense = { ...expense, id: Date.now().toString() };
       const updatedExpenses = [...expenses, newExpense];
       setExpenses(updatedExpenses);
       await saveExpenses(updatedExpenses);
@@ -79,6 +79,7 @@ const HomeScreen = () => {
       Alert.alert('Error', 'Failed to add expense.');
     }
   };
+
 
 
   const handleUpdateExpense = async (expense: Expense) => {
