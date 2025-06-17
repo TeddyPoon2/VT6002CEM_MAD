@@ -102,7 +102,6 @@ const HomeScreen = () => {
 
       // Handle account balance updates
       if (originalExpense.accountId !== expense.accountId) {
-        // Account changed (possibly also amount changed)
         // Always refund the original account by the original amount
         await updateAccountBalance(originalExpense.accountId, originalExpense.amount, false);
         // Always debit the new account by the new amount

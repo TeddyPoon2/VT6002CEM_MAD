@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Modal,
   View,
@@ -24,6 +25,9 @@ type ShowModalProps = {
   onSubmit: (data: Expense | Account) => void;
 };
 
+const CATEGORY_HISTORY_KEY = 'expense_category_history';
+const ITEM_HISTORY_KEY = 'expense_item_history';
+
 const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], selectedAccount, onSubmit }: ShowModalProps) => {
   // Expense fields
   const expenseFields = {
@@ -35,6 +39,12 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
     accountId: selectedAccount || undefined,
   };
   const [expense, setExpense] = useState(expenseFields);
+  const [categoryHistory, setCategoryHistory] = useState<string[]>([]);
+  type ItemHistoryEntry = { category: string; item: string };
+  const [itemHistory, setItemHistory] = useState<ItemHistoryEntry[]>([]);
+
+  const categoryInputRef = useRef<TextInput>(null);
+  const itemInputRef = useRef<TextInput>(null);
   // Account fields
   const accountFields = {
     name: '',
@@ -50,6 +60,22 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
   const updateAccountField = (field: keyof Account, value: string) => {
     setAccount({ ...account, [field]: value });
   };
+
+  // Load histories from AsyncStorage
+  React.useEffect(() => {
+    (async () => {
+      const cat = await AsyncStorage.getItem(CATEGORY_HISTORY_KEY);
+      const itm = await AsyncStorage.getItem(ITEM_HISTORY_KEY);
+      setCategoryHistory(cat ? JSON.parse(cat) : []);
+      setItemHistory(
+        itm
+          ? JSON.parse(itm).filter(
+              (h: any) => h && typeof h.category === 'string' && typeof h.item === 'string'
+            )
+          : []
+      ); // Now array of {category, item} objects
+    })();
+  }, [visible]);
 
   React.useEffect(() => {
     if (type === 'expense' && initialData) {
@@ -76,11 +102,25 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
     }
   }, [visible, type, initialData, selectedAccount]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (type === 'expense') {
       if (!expense.amount || !expense.date || !expense.category || !expense.item || !expense.accountId) {
         Alert.alert('Error', 'All fields are required');
         return;
+      }
+      // Save to history if new
+      let newCategoryHistory = categoryHistory;
+      let newItemHistory = itemHistory;
+      if (expense.category && !categoryHistory.includes(expense.category)) {
+        newCategoryHistory = [expense.category, ...categoryHistory].slice(0, 10);
+        setCategoryHistory(newCategoryHistory);
+        await AsyncStorage.setItem(CATEGORY_HISTORY_KEY, JSON.stringify(newCategoryHistory));
+      }
+      // Save item-category pair if new
+      if (expense.item && expense.category && !itemHistory.some(h => h.item === expense.item && h.category === expense.category)) {
+        newItemHistory = [{ category: expense.category, item: expense.item }, ...itemHistory].slice(0, 20);
+        setItemHistory(newItemHistory);
+        await AsyncStorage.setItem(ITEM_HISTORY_KEY, JSON.stringify(newItemHistory));
       }
       onSubmit({
         ...(initialData || {}),
@@ -164,13 +204,55 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
                     />
                   </View>
                   <Text style={styles.label}>Category</Text>
+                  {categoryHistory.length > 0 && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.historyBar}>
+                      {categoryHistory.map((cat, idx) => (
+                        <TouchableOpacity
+                          key={cat + idx}
+                          style={styles.historyChip}
+                          onPress={() => {
+                            updateExpenseField('category', cat);
+                            categoryInputRef.current?.blur();
+                          }}
+                        >
+                          <Text style={styles.historyChipText}>{cat}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  )}
                   <TextInput
+                    ref={categoryInputRef}
                     style={styles.input}
                     value={expense.category}
                     onChangeText={(value) => updateExpenseField('category', value)}
                   />
                   <Text style={styles.label}>Item</Text>
+                  {itemHistory.length > 0 && expense.category && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.historyBar}>
+                      {itemHistory
+                        .filter(h =>
+                          h &&
+                          typeof h.category === 'string' &&
+                          typeof h.item === 'string' &&
+                          typeof expense.category === 'string' &&
+                          h.category.trim().toLowerCase() === expense.category.trim().toLowerCase()
+                        )
+                        .map((entry, idx) => (
+                          <TouchableOpacity
+                            key={entry.item + idx}
+                            style={styles.historyChip}
+                            onPress={() => {
+                              updateExpenseField('item', entry.item);
+                              itemInputRef.current?.blur();
+                            }}
+                          >
+                            <Text style={styles.historyChipText}>{entry.item}</Text>
+                          </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                  )}
                   <TextInput
+                    ref={itemInputRef}
                     style={styles.input}
                     value={expense.item}
                     onChangeText={(value) => updateExpenseField('item', value)}
@@ -243,6 +325,26 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
 
 
 const styles = StyleSheet.create({
+  historyBar: {
+    flexDirection: 'row',
+    marginBottom: 4,
+    marginTop: 2,
+    paddingHorizontal: 2,
+    minHeight: 36,
+  },
+  historyChip: {
+    backgroundColor: '#222',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyChipText: {
+    color: '#fff',
+    fontSize: 15,
+  },
   overlay: {
     flex: 1,
     justifyContent: 'center',
