@@ -51,14 +51,16 @@ const HomeScreen = () => {
 
 
   // update account balance
-  const updateAccountBalance = async (accountId: string, amount: number) => {
+  const updateAccountBalance = async (accountId: string, amount: number, isDebit = true) => {
     const accountIndex = accounts.findIndex(acc => acc.id === accountId);
     if (accountIndex !== -1) {
       const updatedAccounts = [...accounts];
       const prevBalance = updatedAccounts[accountIndex].balance || 0;
+      // If isDebit is true, subtract the amount (expense), otherwise add it back (refund)
+      const newBalance = isDebit ? prevBalance - amount : prevBalance + amount;
       updatedAccounts[accountIndex] = {
         ...updatedAccounts[accountIndex],
-        balance: prevBalance - amount,
+        balance: newBalance,
       };
       setAccounts(updatedAccounts);
       await saveAccounts(updatedAccounts);
@@ -71,7 +73,8 @@ const HomeScreen = () => {
       const updatedExpenses = [...expenses, newExpense];
       setExpenses(updatedExpenses);
       await saveExpenses(updatedExpenses);
-      await updateAccountBalance(newExpense.accountId, newExpense.amount);
+      // Debit the account (subtract the expense amount)
+      await updateAccountBalance(newExpense.accountId, newExpense.amount, true);
     } catch (error) {
       Alert.alert('Error', 'Failed to add expense.');
     }
@@ -80,10 +83,29 @@ const HomeScreen = () => {
 
   const handleUpdateExpense = async (expense: Expense) => {
     try {
+      // Find the original expense to handle account changes
+      const originalExpense = expenses.find(e => e.id === expense.id);
+      if (!originalExpense) {
+        Alert.alert('Error', 'Could not find original expense');
+        return;
+      }
+
+      // Update the expenses list
       const updatedList = expenses.map((e) => (e.id === expense.id ? expense : e));
       setExpenses(updatedList);
       await saveExpenses(updatedList);
-      await updateAccountBalance(expense.accountId, expense.amount);
+
+      // Handle account balance updates
+      if (originalExpense.accountId !== expense.accountId) {
+        // Account changed - refund the old account
+        await updateAccountBalance(originalExpense.accountId, originalExpense.amount, false);
+        // Debit the new account
+        await updateAccountBalance(expense.accountId, expense.amount, true);
+      } else if (originalExpense.amount !== expense.amount) {
+        // Same account but amount changed - adjust the difference
+        await updateAccountBalance(originalExpense.accountId, originalExpense.amount, false);
+        await updateAccountBalance(expense.accountId, expense.amount, true);
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to update expense.');
     }
@@ -96,9 +118,9 @@ const HomeScreen = () => {
       const updatedExpenses = expenses.filter((e) => e.id !== id);
       setExpenses(updatedExpenses);
       await saveExpenses(updatedExpenses);
-      // Restore account balance
+      // Restore account balance (add the amount back)
       if (expenseToDelete) {
-        await updateAccountBalance(expenseToDelete.accountId, expenseToDelete.amount);
+        await updateAccountBalance(expenseToDelete.accountId, expenseToDelete.amount, false);
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to delete expense.');
@@ -168,14 +190,25 @@ const HomeScreen = () => {
   };
 
 
+  // Use all expenses without filtering by account
+  const sortedExpenses = React.useMemo(() => {
+    return [...expenses].sort((a, b) => 
+      new Date(b.date || b.createdAt || '').getTime() - 
+      new Date(a.date || a.createdAt || '').getTime()
+    );
+  }, [expenses]);
+
   const renderExpense = ({ item }: { item: Expense }) => {
-    if (selectedAccount && item.accountId !== selectedAccount) return null;
     const date = new Date(item.date ?? item.createdAt ?? '');
+    // Find the account name for this expense
+    const account = accounts.find(acc => acc.id === item.accountId);
+    const accountName = account ? account.name : 'Unknown Account';
     return (
       <TouchableOpacity style={styles.itemContainer} onPress={() => handleExpensePress(item)}>
         <Text style={styles.title}>{item.category || 'Expense'}</Text>
         <Text style={styles.description}>${item.amount} - {item.description}</Text>
-        <Text style={styles.meta}>{date.toLocaleDateString()} {date.toLocaleTimeString()}</Text>
+        <Text style={styles.meta}>{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        <Text style={styles.accountName}>Account: {accountName}</Text>
         <TouchableOpacity onPress={() => {
           setDeleteTarget({ type: 'expense', id: item.id ?? '' });
           setConfirmVisible(true);
@@ -235,8 +268,7 @@ const HomeScreen = () => {
 
       <Text style={styles.header}>Expenses</Text>
       <FlatList
-        data={expenses
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
+        data={sortedExpenses}
         renderItem={renderExpense}
         keyExtractor={(item) => item.id ? item.id : ''}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
@@ -382,6 +414,13 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: 12,
     color: '#666',
+    marginTop: 4,
+  },
+  accountName: {
+    fontSize: 12,
+    color: '#0066cc',
+    marginTop: 4,
+    fontWeight: '500',
   },
   addButton: {
     padding: 10,
