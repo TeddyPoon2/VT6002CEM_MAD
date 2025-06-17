@@ -82,6 +82,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
         const geocode = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
         if (geocode && geocode.length > 0) {
           const g = geocode[0];
+          console.log(g);
           // address = `${g.name || ''} ${g.street || ''} ${g.city || ''} ${g.region || ''} ${g.country || ''}`.replace(/\s+/g, ' ').trim();
           address = g.city || '';
         }

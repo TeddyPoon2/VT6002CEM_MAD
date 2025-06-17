@@ -28,7 +28,7 @@ const SettingsScreen = () => {
         
         if (data) setUser(JSON.parse(data));
         if (freq) {
-          console.log('Loaded backup frequency:', freq);
+          // console.log('Loaded backup frequency:', freq);
           setBackupFrequency(freq);
         } else {
           // If no frequency is set, set default and save it
@@ -139,7 +139,7 @@ const SettingsScreen = () => {
                       setBackupFrequency(freq);
                       try {
                         await AsyncStorage.setItem(BACKUP_FREQ_KEY, freq);
-                        console.log('Frequency set to:', freq);
+                        // console.log('Frequency set to:', freq);
                       } catch (error) {
                         console.error('Error saving frequency:', error);
                       }
