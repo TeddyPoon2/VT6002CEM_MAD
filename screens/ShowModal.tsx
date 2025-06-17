@@ -13,6 +13,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Location from 'expo-location';
 import { Account, Expense } from '../types';
 
 type ShowModalProps = {
@@ -51,6 +52,10 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
     type: '',
     balance: '',
   };
+
+  // Location loading state
+  const [locLoading, setLocLoading] = useState(false);
+
   const [account, setAccount] = useState(accountFields);
 
   const updateExpenseField = (field: keyof Expense, value: string) => {
@@ -59,6 +64,37 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
 
   const updateAccountField = (field: keyof Account, value: string) => {
     setAccount({ ...account, [field]: value });
+  };
+
+  // Handler to get current location and fill description
+  const handleGetLocation = async () => {
+    try {
+      setLocLoading(true);
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Location permission is required to get your current location.');
+        setLocLoading(false);
+        return;
+      }
+      let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      let address = '';
+      try {
+        const geocode = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        if (geocode && geocode.length > 0) {
+          const g = geocode[0];
+          // address = `${g.name || ''} ${g.street || ''} ${g.city || ''} ${g.region || ''} ${g.country || ''}`.replace(/\s+/g, ' ').trim();
+          address = g.city || '';
+        }
+      } catch (e) { }
+      if (!address) {
+        address = `Lat: ${loc.coords.latitude}, Lng: ${loc.coords.longitude}`;
+      }
+      setExpense(e => ({ ...e, description: address }));
+    } catch (err) {
+      Alert.alert('Error', 'Failed to get location.');
+    } finally {
+      setLocLoading(false);
+    }
   };
 
   // Load histories from AsyncStorage
@@ -70,8 +106,8 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
       setItemHistory(
         itm
           ? JSON.parse(itm).filter(
-              (h: any) => h && typeof h.category === 'string' && typeof h.item === 'string'
-            )
+            (h: any) => h && typeof h.category === 'string' && typeof h.item === 'string'
+          )
           : []
       ); // Now array of {category, item} objects
     })();
@@ -257,9 +293,19 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
                     value={expense.item}
                     onChangeText={(value) => updateExpenseField('item', value)}
                   />
-                  <Text style={styles.label}>Description</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={[styles.label, { marginTop: 5 }]}>Description</Text>
+                    <TouchableOpacity
+                      style={{ backgroundColor: '#007BFF', padding: 5, borderRadius: 5, marginBottom: 10 }}
+                      onPress={handleGetLocation}
+                      disabled={locLoading}
+                    >
+                      <Text style={{ color: 'white' }}>{locLoading ? '...' : 'Get Location'}</Text>
+                    </TouchableOpacity>
+                  </View>
                   <TextInput
-                    style={styles.input}
+                    multiline
+                    style={[styles.descriptionInput]}
                     value={expense.description}
                     onChangeText={(value) => updateExpenseField('description', value)}
                   />
@@ -394,6 +440,15 @@ const styles = StyleSheet.create({
   datePickButton: {
     backgroundColor: '#007BFF',
     borderRadius: 5,
+    marginBottom: 10,
+  },
+  descriptionInput: {
+    flex: 1,
+    height: 100,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
     marginBottom: 10,
   },
 });
