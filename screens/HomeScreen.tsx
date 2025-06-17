@@ -166,8 +166,8 @@ const HomeScreen = () => {
       if (selectedAccount === id && updated.length > 0) {
         setSelectedAccount(updated[0].id ?? '');
       }
-      // Delete all expenses associated with this account
-      const updatedExpenses = expenses.filter((e) => e.accountId === id);
+      // Delete only expenses associated with this account
+      const updatedExpenses = expenses.filter((e) => e.accountId !== id);
       setExpenses(updatedExpenses);
       await saveExpenses(updatedExpenses);
     } catch (error) {
@@ -215,7 +215,7 @@ const HomeScreen = () => {
           <Text style={styles.description}>{item.description}</Text>
         )}
         <Text style={styles.meta}>{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-        <Text style={styles.accountName}>Account: {accountName}</Text>
+        <Text style={styles.accountName}>Account: {accountName} ({account?.type})</Text>
         <TouchableOpacity onPress={() => {
           setDeleteTarget({ type: 'expense', id: item.id ?? '' });
           setConfirmVisible(true);
