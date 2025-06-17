@@ -31,6 +31,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
     date: '',
     category: '',
     description: '',
+    item: '',
     accountId: selectedAccount || undefined,
   };
   const [expense, setExpense] = useState(expenseFields);
@@ -58,6 +59,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
         date: exp.date || '',
         category: exp.category || '',
         description: exp.description || '',
+        item: exp.item || '',
         accountId: exp.accountId || selectedAccount || '',
       });
     } else if (type === 'account' && initialData) {
@@ -76,7 +78,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
 
   const handleSubmit = () => {
     if (type === 'expense') {
-      if (!expense.amount || !expense.date || !expense.category || !expense.description || !expense.accountId) {
+      if (!expense.amount || !expense.date || !expense.category || !expense.item || !expense.accountId) {
         Alert.alert('Error', 'All fields are required');
         return;
       }
@@ -86,6 +88,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
         date: expense.date,
         category: expense.category,
         description: expense.description,
+        item: expense.item,
         accountId: expense.accountId,
       });
     } else {
@@ -165,6 +168,12 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
                     style={styles.input}
                     value={expense.category}
                     onChangeText={(value) => updateExpenseField('category', value)}
+                  />
+                  <Text style={styles.label}>Item</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={expense.item}
+                    onChangeText={(value) => updateExpenseField('item', value)}
                   />
                   <Text style={styles.label}>Description</Text>
                   <TextInput

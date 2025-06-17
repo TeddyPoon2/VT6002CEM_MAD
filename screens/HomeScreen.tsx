@@ -206,7 +206,10 @@ const HomeScreen = () => {
     return (
       <TouchableOpacity style={styles.itemContainer} onPress={() => handleExpensePress(item)}>
         <Text style={styles.title}>{item.category || 'Expense'}</Text>
-        <Text style={styles.description}>${item.amount} - {item.description}</Text>
+        <Text style={styles.itemDetail}>${item.amount} - {item.item || 'No item'}</Text>
+        {item.description && (
+          <Text style={styles.description}>{item.description}</Text>
+        )}
         <Text style={styles.meta}>{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         <Text style={styles.accountName}>Account: {accountName}</Text>
         <TouchableOpacity onPress={() => {
@@ -421,6 +424,11 @@ const styles = StyleSheet.create({
     color: '#0066cc',
     marginTop: 4,
     fontWeight: '500',
+  },
+  itemDetail: {
+    fontSize: 14,
+    color: '#444',
+    marginTop: 2,
   },
   addButton: {
     padding: 10,

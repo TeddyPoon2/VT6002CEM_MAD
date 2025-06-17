@@ -13,6 +13,7 @@ export type Expense = {
     date: string;
     category: string;
     description: string;
+    item: string;
     accountId: string;
     user?: string;
     createdAt?: string;
