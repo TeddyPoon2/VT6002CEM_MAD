@@ -38,3 +38,4 @@ yarn-error.*
 
 #firebase
 server/firebase.js
+server/firebase-admin.json
