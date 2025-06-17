@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl, Modal } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl, Modal, SafeAreaView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import ShowModal from './ShowModal';
 import { getExpenses, saveExpenses, getAccounts, saveAccounts } from './storage';
 import { Account, Expense } from '../types';
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'expense' | 'account'; id: string } | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -206,8 +208,18 @@ const HomeScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+      <View>
+      <TouchableOpacity
+        style={styles.gearButton}
+        onPress={() => navigation.navigate('Settings' as never)}
+        accessibilityLabel="Settings"
+      >
+        <Text style={styles.gearIcon}>⚙️</Text>
+      </TouchableOpacity>
       <Text style={styles.header}>Accounts</Text>
+      </View>
       <FlatList
         data={accounts}
         renderItem={renderAccount}
@@ -254,7 +266,7 @@ const HomeScreen = () => {
           setEditItem(null);
         }}
       />
-      {/* Global Confirm Delete Modal */}
+      {/* Confirm Delete Modal */}
       <Modal
         visible={confirmVisible}
         transparent
@@ -294,11 +306,23 @@ const HomeScreen = () => {
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  gearButton: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    zIndex: 10,
+    padding: 8,
+    borderRadius: 20,
+  },
+  gearIcon: {
+    fontSize: 24,
+  },
   confirmOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -331,6 +355,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+    
   },
   header: {
     fontSize: 24,
