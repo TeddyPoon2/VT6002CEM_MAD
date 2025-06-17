@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { NavigationContainer, Alert } from '@react-navigation/native';
+import { StyleSheet, Alert } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './screens/HomeScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +8,8 @@ import { API_URL } from '@env';
 import Comment from './screens/Comments';
 import SettingsScreen from './screens/SettingsScreen';
 import LoginScreen from './screens/LoginScreen';
+import SummaryScreen from './screens/SummaryScreen';
+
 const Stack = createStackNavigator();
 
 const AUTH_KEY = 'userAuth';
@@ -71,6 +73,7 @@ export default function App() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Comments" component={Comment} />
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Summary" component={SummaryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

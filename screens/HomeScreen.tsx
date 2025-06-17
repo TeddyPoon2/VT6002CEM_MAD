@@ -136,7 +136,6 @@ const HomeScreen = () => {
     }
   };
 
-
   // Account handlers
   const handleAddAccount = async (account: Account) => {
     try {
@@ -176,15 +175,12 @@ const HomeScreen = () => {
     }
   };
 
-
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadAccounts();
     await loadExpenses();
     setRefreshing(false);
   };
-
-
 
   const handleExpensePress = (expense: Expense) => {
     setEditItem(expense);
@@ -197,7 +193,6 @@ const HomeScreen = () => {
     setModalType('account');
     setModalVisible(true);
   };
-
 
   // Use all expenses without filtering by account
   const sortedExpenses = React.useMemo(() => {
@@ -264,6 +259,13 @@ const HomeScreen = () => {
         <Text style={styles.gearIcon}>⚙️</Text>
       </TouchableOpacity>
       <Text style={styles.header}>Accounts</Text>
+      <TouchableOpacity
+        style={styles.summaryButton}
+        onPress={() => navigation.navigate('Summary' as never)}
+        accessibilityLabel="Settings"
+      >
+        <Text style={{ color: 'white' }}>Summary</Text>
+      </TouchableOpacity>
       </View>
       <FlatList
         data={accounts}
@@ -360,9 +362,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     left: 10,
-    zIndex: 10,
-    padding: 8,
+    // padding: 8,  
     borderRadius: 20,
+    zIndex: 1,
   },
   gearIcon: {
     fontSize: 24,
@@ -450,6 +452,15 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#ffffff',
     fontWeight: 'bold',
+  },
+  summaryButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#007BFF',
+    alignItems: 'center',
+    borderRadius: 5,
+    padding: 5,
   },
 });
 
