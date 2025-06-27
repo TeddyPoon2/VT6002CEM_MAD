@@ -65,7 +65,7 @@ const HomeScreen = () => {
     try {
       const location = await Location.getCurrentPositionAsync({});
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${location.coords.latitude},${location.coords.longitude}&appid=${WEATHER_API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?lat=${location.coords.latitude}&lon=${location.coords.longitude}&appid=${WEATHER_API_KEY}&units=metric`
       );
       if (!response.ok) throw new Error('Failed to fetch weather');
       const data = await response.json();
@@ -254,8 +254,8 @@ const HomeScreen = () => {
 
   // Use all expenses without filtering by account
   const sortedExpenses = React.useMemo(() => {
-    return [...expenses].sort((a, b) => 
-      new Date(b.date || b.createdAt || '').getTime() - 
+    return [...expenses].sort((a, b) =>
+      new Date(b.date || b.createdAt || '').getTime() -
       new Date(a.date || a.createdAt || '').getTime()
     );
   }, [expenses]);
@@ -308,136 +308,136 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.container}>
-      {/* Weather Row */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
-        {weatherLoading ? (
-          <ActivityIndicator size="small" color="#0000ff" />
-        ) : weatherError ? (
-          <Text style={{ color: 'red', marginRight: 10 }}>{weatherError}</Text>
-        ) : weather ? (
-          <>
-            <Image
-              source={{ uri: `https://openweathermap.org/img/wn/${weather.icon}@2x.png` }}
-              style={{ width: 36, height: 36, marginRight: 8 }}
-              accessibilityLabel={weather.desc}
-            />
-            <Text style={{ fontSize: 16, marginRight: 8 }}>{weather.temp}°C</Text>
-            <Text style={{ fontSize: 16, color: '#555', marginRight: 10 }}>{weather.desc}</Text>
-          </>
-        ) : null}
-      </View>
-      {/* Total Balance */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 12 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', marginRight: 10 }}>Total Balance:</Text>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', marginRight: 10 }}>
-          {showBalance ? `$${totalBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '••••••'}
-        </Text>
-        <TouchableOpacity onPress={handleBalanceToggle} accessibilityLabel={showBalance ? 'Hide balance' : 'Show balance'}>
-        <Entypo name={showBalance ? 'eye-with-line' : 'eye'} size={24} color="black" />
-        </TouchableOpacity>
-      </View>
-      <View>
-      <TouchableOpacity
-        style={styles.gearButton}
-        onPress={() => navigation.navigate('Settings' as never)}
-        accessibilityLabel="Settings"
-      >
-        <Entypo name="cog" size={24} color="black" />
-      </TouchableOpacity>
-      <Text style={styles.header}>Accounts</Text>
-      <TouchableOpacity
-        style={styles.summaryButton}
-        onPress={() => navigation.navigate('Summary' as never)}
-        accessibilityLabel="Settings"
-      >
-        <Text style={{ color: 'white' }}>Summary</Text>
-      </TouchableOpacity>
-      </View>
-      <FlatList
-        data={accounts}
-        renderItem={renderAccount}
-        keyExtractor={(item) => item.id ? item.id : ''}
-        horizontal
-        extraData={selectedAccount}
-        style={{ height: 120, }}
-        ItemSeparatorComponent={() => <View style={{ width: 5 }} />}
-      />
-      <TouchableOpacity style={styles.addButton} onPress={() => { setModalType('account'); setEditItem(null); setModalVisible(true); }}>
-        <Text style={styles.buttonText}>Add Account</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.header}>Expenses</Text>
-      <FlatList
-        data={sortedExpenses}
-        renderItem={renderExpense}
-        keyExtractor={(item) => item.id ? item.id : ''}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-      />
-      <TouchableOpacity style={styles.addButton} onPress={() => { setModalType('expense'); setEditItem(null); setModalVisible(true); }}>
-        <Text style={styles.buttonText}>Add Expense</Text>
-      </TouchableOpacity>
-      <ShowModal
-        visible={modalVisible}
-        setVisible={(v) => {
-          setModalVisible(v);
-          if (!v) setEditItem(null);
-        }}
-        type={modalType}
-        initialData={editItem}
-        accounts={accounts}
-        selectedAccount={selectedAccount}
-        onSubmit={async (item: Expense | Account) => {
-          if (modalType === 'expense') {
-            if (editItem) await handleUpdateExpense(item as Expense);
-            else await handleAddExpense(item as Expense);
-          } else {
-            if (editItem) await handleUpdateAccount(item as Account);
-            else await handleAddAccount(item as Account);
-          }
-          setModalVisible(false);
-          setEditItem(null);
-        }}
-      />
-      {/* Confirm Delete Modal */}
-      <Modal
-        visible={confirmVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setConfirmVisible(false)}
-      >
-        <View style={styles.confirmOverlay}>
-          <View style={styles.confirmContainer}>
-            <Text style={styles.confirmText}>Are you sure you want to delete this {deleteTarget?.type}?</Text>
-            {deleteTarget?.type === 'account' && (
-            <Text style={styles.confirmText}>This will also delete all expenses associated with it.</Text>
-            )}
-            <View style={{ flexDirection: 'row', marginTop: 20 }}>
-              <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: '#d9534f' }]}
-                onPress={async () => {
-                  setConfirmVisible(false);
-                  if (deleteTarget) {
-                    if (deleteTarget.type === 'expense') await handleDeleteExpense(deleteTarget.id);
-                    if (deleteTarget.type === 'account') await handleDeleteAccount(deleteTarget.id);
-                    setDeleteTarget(null);
-                  }
-                }}
-              >
-                <Text style={styles.confirmButtonText}>Delete</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: '#aaa', marginLeft: 10 }]}
-                onPress={() => {
-                  setConfirmVisible(false);
-                  setDeleteTarget(null);
-                }}
-              >
-                <Text style={styles.confirmButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
+        {/* Weather + Balance */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+            {weatherLoading ? (
+              <ActivityIndicator size="small" color="#0000ff" />
+            ) : weatherError ? (
+              <Text style={{ color: 'red', marginRight: 10 }}>{weatherError}</Text>
+            ) : weather ? (
+              <>
+                <Image
+                  source={{ uri: `https://openweathermap.org/img/wn/${weather.icon}@2x.png` }}
+                  style={{ width: 36, height: 36, marginRight: 8 }}
+                  accessibilityLabel={weather.desc}
+                />
+                <Text style={{ fontSize: 16, marginRight: 8 }}>{weather.temp}°C</Text>
+              </>
+            ) : null}
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginRight: 10 }}>Total Balance:</Text>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginRight: 10 }}>
+              {showBalance ? `$${totalBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '••••••'}
+            </Text>
+            <TouchableOpacity onPress={handleBalanceToggle} accessibilityLabel={showBalance ? 'Hide balance' : 'Show balance'}>
+              <Entypo name={showBalance ? 'eye-with-line' : 'eye'} size={24} color="black" />
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+        <View>
+          <TouchableOpacity
+            style={styles.gearButton}
+            onPress={() => navigation.navigate('Settings' as never)}
+            accessibilityLabel="Settings"
+          >
+            <Entypo name="cog" size={24} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.header}>Accounts</Text>
+          <TouchableOpacity
+            style={styles.summaryButton}
+            onPress={() => navigation.navigate('Summary' as never)}
+            accessibilityLabel="Settings"
+          >
+            <Text style={{ color: 'white' }}>Summary</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={accounts}
+          renderItem={renderAccount}
+          keyExtractor={(item) => item.id ? item.id : ''}
+          horizontal
+          extraData={selectedAccount}
+          style={{ height: 120, }}
+          ItemSeparatorComponent={() => <View style={{ width: 5 }} />}
+        />
+        <TouchableOpacity style={styles.addButton} onPress={() => { setModalType('account'); setEditItem(null); setModalVisible(true); }}>
+          <Text style={styles.buttonText}>Add Account</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.header}>Expenses</Text>
+        <FlatList
+          data={sortedExpenses}
+          renderItem={renderExpense}
+          keyExtractor={(item) => item.id ? item.id : ''}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        />
+        <TouchableOpacity style={styles.addButton} onPress={() => { setModalType('expense'); setEditItem(null); setModalVisible(true); }}>
+          <Text style={styles.buttonText}>Add Expense</Text>
+        </TouchableOpacity>
+        <ShowModal
+          visible={modalVisible}
+          setVisible={(v) => {
+            setModalVisible(v);
+            if (!v) setEditItem(null);
+          }}
+          type={modalType}
+          initialData={editItem}
+          accounts={accounts}
+          selectedAccount={selectedAccount}
+          onSubmit={async (item: Expense | Account) => {
+            if (modalType === 'expense') {
+              if (editItem) await handleUpdateExpense(item as Expense);
+              else await handleAddExpense(item as Expense);
+            } else {
+              if (editItem) await handleUpdateAccount(item as Account);
+              else await handleAddAccount(item as Account);
+            }
+            setModalVisible(false);
+            setEditItem(null);
+          }}
+        />
+        {/* Confirm Delete Modal */}
+        <Modal
+          visible={confirmVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setConfirmVisible(false)}
+        >
+          <View style={styles.confirmOverlay}>
+            <View style={styles.confirmContainer}>
+              <Text style={styles.confirmText}>Are you sure you want to delete this {deleteTarget?.type}?</Text>
+              {deleteTarget?.type === 'account' && (
+                <Text style={styles.confirmText}>This will also delete all expenses associated with it.</Text>
+              )}
+              <View style={{ flexDirection: 'row', marginTop: 20 }}>
+                <TouchableOpacity
+                  style={[styles.confirmButton, { backgroundColor: '#d9534f' }]}
+                  onPress={async () => {
+                    setConfirmVisible(false);
+                    if (deleteTarget) {
+                      if (deleteTarget.type === 'expense') await handleDeleteExpense(deleteTarget.id);
+                      if (deleteTarget.type === 'account') await handleDeleteAccount(deleteTarget.id);
+                      setDeleteTarget(null);
+                    }
+                  }}
+                >
+                  <Text style={styles.confirmButtonText}>Delete</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmButton, { backgroundColor: '#aaa', marginLeft: 10 }]}
+                  onPress={() => {
+                    setConfirmVisible(false);
+                    setDeleteTarget(null);
+                  }}
+                >
+                  <Text style={styles.confirmButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    
+
   },
   header: {
     fontSize: 24,
