@@ -5,7 +5,6 @@ import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './screens/HomeScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
-import Comment from './screens/Comments';
 import SettingsScreen from './screens/SettingsScreen';
 import LoginScreen from './screens/LoginScreen';
 import SummaryScreen from './screens/SummaryScreen';
@@ -71,7 +70,6 @@ export default function App() {
       <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="Comments" component={Comment} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Summary" component={SummaryScreen} />
       </Stack.Navigator>

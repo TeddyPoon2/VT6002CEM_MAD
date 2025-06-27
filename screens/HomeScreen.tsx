@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Image } from 'react-native'; // For weather icon
+import { Image } from 'react-native';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl, Modal, SafeAreaView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authenticateBiometric } from '../utils/biometric';
 import { useNavigation } from '@react-navigation/native';
 import ShowModal from './ShowModal';
-import { getExpenses, saveExpenses, getAccounts, saveAccounts } from './storage';
+import { getExpenses, saveExpenses, getAccounts, saveAccounts } from '../utils/storage';
 import { Account, Expense } from '../types';
 import Entypo from '@expo/vector-icons/Entypo';
 import * as Location from 'expo-location';
