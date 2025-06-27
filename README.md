@@ -15,7 +15,7 @@
 
 ```bash
 git clone <repo-url>
-cd app
+cd <appname>
 ```
 
 ---
@@ -44,7 +44,6 @@ npm install
 ```bash
 cd server
 npm install
-cd ..
 ```
 
 ---
@@ -55,7 +54,7 @@ cd ..
 
 ```bash
 cd server
-npm start
+node server
 ```
 
 The server will start on the default port (check `server.js` for details).
