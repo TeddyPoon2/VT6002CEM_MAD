@@ -271,7 +271,7 @@ const HomeScreen = () => {
         onPress={() => navigation.navigate('Settings' as never)}
         accessibilityLabel="Settings"
       >
-        <Text style={styles.gearIcon}>⚙️</Text>
+        <Entypo name="cog" size={24} color="black" />
       </TouchableOpacity>
       <Text style={styles.header}>Accounts</Text>
       <TouchableOpacity
@@ -380,9 +380,6 @@ const styles = StyleSheet.create({
     // padding: 8,  
     borderRadius: 20,
     zIndex: 1,
-  },
-  gearIcon: {
-    fontSize: 24,
   },
   confirmOverlay: {
     flex: 1,
