@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Image } from 'react-native'; // For weather icon
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl, Modal, SafeAreaView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authenticateBiometric } from '../utils/biometric';
@@ -7,6 +8,8 @@ import ShowModal from './ShowModal';
 import { getExpenses, saveExpenses, getAccounts, saveAccounts } from './storage';
 import { Account, Expense } from '../types';
 import Entypo from '@expo/vector-icons/Entypo';
+import * as Location from 'expo-location';
+import { WEATHER_API_KEY } from '@env';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -21,6 +24,11 @@ const HomeScreen = () => {
   const [modalType, setModalType] = useState<'expense' | 'account'>("expense");
   const [editItem, setEditItem] = useState<Expense | Account | null>(null);
   const [showBalance, setShowBalance] = useState(true);
+
+  // Weather state
+  const [weather, setWeather] = useState<{ temp: number; icon: string; desc: string } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
   // Calculate total balance
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -47,7 +55,31 @@ const HomeScreen = () => {
   useEffect(() => {
     loadAccounts();
     loadExpenses();
+    fetchWeather();
   }, []);
+
+  // Fetch weather from OpenWeatherMap
+  const fetchWeather = async () => {
+    setWeatherLoading(true);
+    setWeatherError(null);
+    try {
+      const location = await Location.getCurrentPositionAsync({});
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${location.coords.latitude},${location.coords.longitude}&appid=${WEATHER_API_KEY}&units=metric`
+      );
+      if (!response.ok) throw new Error('Failed to fetch weather');
+      const data = await response.json();
+      setWeather({
+        temp: data.main.temp,
+        icon: data.weather[0].icon,
+        desc: data.weather[0].description,
+      });
+    } catch (e: any) {
+      setWeatherError(e.message || 'Weather unavailable');
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
 
   // Load accounts from local storage
   const loadAccounts = async () => {
@@ -276,6 +308,24 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.container}>
+      {/* Weather Row */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+        {weatherLoading ? (
+          <ActivityIndicator size="small" color="#0000ff" />
+        ) : weatherError ? (
+          <Text style={{ color: 'red', marginRight: 10 }}>{weatherError}</Text>
+        ) : weather ? (
+          <>
+            <Image
+              source={{ uri: `https://openweathermap.org/img/wn/${weather.icon}@2x.png` }}
+              style={{ width: 36, height: 36, marginRight: 8 }}
+              accessibilityLabel={weather.desc}
+            />
+            <Text style={{ fontSize: 16, marginRight: 8 }}>{weather.temp}°C</Text>
+            <Text style={{ fontSize: 16, color: '#555', marginRight: 10 }}>{weather.desc}</Text>
+          </>
+        ) : null}
+      </View>
       {/* Total Balance */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 12 }}>
         <Text style={{ fontSize: 18, fontWeight: 'bold', marginRight: 10 }}>Total Balance:</Text>
