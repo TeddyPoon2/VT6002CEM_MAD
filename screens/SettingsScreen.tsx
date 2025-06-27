@@ -3,11 +3,14 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaVie
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '@env';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const AUTH_KEY = 'userAuth';
 
 const BACKUP_FREQ_KEY = 'backupFrequency';
 const LAST_BACKUP_KEY = 'lastBackup';
+
+const REQUIRE_BIOMETRIC_KEY = 'requireBiometricForBalance';
 
 const SettingsScreen = () => {
   const [user, setUser] = useState<{ email: string; token: string } | null>(null);
@@ -15,6 +18,20 @@ const SettingsScreen = () => {
   const [lastBackup, setLastBackup] = useState<string | null>(null);
   const [backupStatus, setBackupStatus] = useState<string>('');
   const navigation = useNavigation();
+  const [requireBiometric, setRequireBiometric] = useState<boolean>(false);
+
+  useEffect(() => {
+    (async () => {
+      const val = await AsyncStorage.getItem(REQUIRE_BIOMETRIC_KEY);
+      if (val !== null) setRequireBiometric(val === 'true');
+    })();
+  }, []);
+
+  const handleBiometricToggle = async (value: boolean) => {
+    setRequireBiometric(value);
+    await AsyncStorage.setItem(REQUIRE_BIOMETRIC_KEY, value ? 'true' : 'false');
+  };
+
 
   useEffect(() => {
     // Load auth state and backup settings from AsyncStorage
@@ -119,6 +136,19 @@ const SettingsScreen = () => {
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.header}>Settings</Text>
+        <View style={{ marginBottom: 24 }}>
+          <Text style={styles.itemHeader}>Privacy</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 }}>
+            <Text style={styles.label}>Require biometrics to view balance</Text>
+            <TouchableOpacity
+              onPress={() => handleBiometricToggle(!requireBiometric)}
+              accessibilityLabel={requireBiometric ? 'Disable biometrics for balance' : 'Enable biometrics for balance'}
+              style={{ marginLeft: 10 }}
+            >
+              <FontAwesome name={requireBiometric ? 'toggle-on' : 'toggle-off'} size={24} color={requireBiometric ? 'green' : ''} />
+            </TouchableOpacity>
+          </View>
+        </View>
         <Text style={styles.itemHeader}>Account</Text>
         {user ? (
           <>

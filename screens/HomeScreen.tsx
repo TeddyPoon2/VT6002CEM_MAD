@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl, Modal, SafeAreaView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authenticateBiometric } from '../utils/biometric';
 import { useNavigation } from '@react-navigation/native';
 import ShowModal from './ShowModal';
 import { getExpenses, saveExpenses, getAccounts, saveAccounts } from './storage';
@@ -22,6 +24,25 @@ const HomeScreen = () => {
 
   // Calculate total balance
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+
+  // Biometric toggle handler
+  const handleBalanceToggle = async () => {
+    if (showBalance) {
+      setShowBalance(false);
+      return;
+    }
+    // Only check biometrics if toggling ON
+    const setting = await AsyncStorage.getItem('requireBiometricForBalance');
+    if (setting === 'true') {
+      const ok = await authenticateBiometric();
+      if (!ok) {
+        Alert.alert('Authentication failed', 'Could not verify your identity.');
+        return;
+      }
+    }
+    setShowBalance(true);
+  };
+
 
   useEffect(() => {
     loadAccounts();
@@ -261,7 +282,7 @@ const HomeScreen = () => {
         <Text style={{ fontSize: 18, fontWeight: 'bold', marginRight: 10 }}>
           {showBalance ? `$${totalBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '••••••'}
         </Text>
-        <TouchableOpacity onPress={() => setShowBalance(v => !v)} accessibilityLabel={showBalance ? 'Hide balance' : 'Show balance'}>
+        <TouchableOpacity onPress={handleBalanceToggle} accessibilityLabel={showBalance ? 'Hide balance' : 'Show balance'}>
         <Entypo name={showBalance ? 'eye-with-line' : 'eye'} size={24} color="black" />
         </TouchableOpacity>
       </View>
