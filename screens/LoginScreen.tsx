@@ -12,7 +12,6 @@ const LoginScreen = () => {
   const navigation = useNavigation();
 
   const handleLogin = async () => {
-    console.log(API_URL);
     if (!email || !password) {
       Alert.alert('Validation Error', 'Please enter both email and password.');
       return;

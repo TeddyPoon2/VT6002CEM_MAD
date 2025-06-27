@@ -159,7 +159,6 @@ const SummaryScreen = () => {
           ...chartConfig,
           color: (opacity = 1) => colorPalettes.day[0],
         }}
-        // verticalLabelRotation={30}
         fromZero
         yAxisLabel={'$'}
         yAxisSuffix={''}
@@ -178,7 +177,6 @@ const SummaryScreen = () => {
           ...chartConfig,
           color: (opacity = 1) => colorPalettes.cumulative[0],
         }}
-        // verticalLabelRotation={30}
         fromZero
         bezier
         yAxisLabel={'$'}
