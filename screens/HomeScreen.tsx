@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import ShowModal from './ShowModal';
 import { getExpenses, saveExpenses, getAccounts, saveAccounts } from './storage';
 import { Account, Expense } from '../types';
+import Entypo from '@expo/vector-icons/Entypo';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -17,6 +18,10 @@ const HomeScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'expense' | 'account'>("expense");
   const [editItem, setEditItem] = useState<Expense | Account | null>(null);
+  const [showBalance, setShowBalance] = useState(true);
+
+  // Calculate total balance
+  const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
   useEffect(() => {
     loadAccounts();
@@ -250,6 +255,16 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.container}>
+      {/* Total Balance */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', marginRight: 10 }}>Total Balance:</Text>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', marginRight: 10 }}>
+          {showBalance ? `$${totalBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '••••••'}
+        </Text>
+        <TouchableOpacity onPress={() => setShowBalance(v => !v)} accessibilityLabel={showBalance ? 'Hide balance' : 'Show balance'}>
+        <Entypo name={showBalance ? 'eye-with-line' : 'eye'} size={24} color="black" />
+        </TouchableOpacity>
+      </View>
       <View>
       <TouchableOpacity
         style={styles.gearButton}
@@ -273,7 +288,7 @@ const HomeScreen = () => {
         keyExtractor={(item) => item.id ? item.id : ''}
         horizontal
         extraData={selectedAccount}
-        style={{ maxHeight: 90, }}
+        style={{ height: 120, }}
         ItemSeparatorComponent={() => <View style={{ width: 5 }} />}
       />
       <TouchableOpacity style={styles.addButton} onPress={() => { setModalType('account'); setEditItem(null); setModalVisible(true); }}>
