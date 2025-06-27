@@ -234,7 +234,7 @@ const HomeScreen = () => {
   const renderAccount = ({ item }: { item: Account }) => (
     <TouchableOpacity style={styles.itemContainer} onPress={() => handleAccountPress(item)}>
       <Text style={styles.title}>{item.name} ({item.type})</Text>
-      <Text style={styles.meta}>Balance: ${item.balance || 0}</Text>
+      <Text style={styles.meta}>Balance: {showBalance ? `$${item.balance || 0}` : '••••••'}</Text>
       <TouchableOpacity onPress={() => {
         setDeleteTarget({ type: 'account', id: item.id ?? '' });
         setConfirmVisible(true);
