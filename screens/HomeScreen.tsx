@@ -267,19 +267,28 @@ const HomeScreen = () => {
     const accountName = account ? account.name : 'Unknown Account';
     return (
       <TouchableOpacity style={styles.itemContainer} onPress={() => handleExpensePress(item)}>
-        <Text style={styles.title}>{item.category || 'Expense'}</Text>
-        <Text style={styles.itemDetail}>${item.amount} - {item.item || 'No item'}</Text>
-        {item.description && (
-          <Text style={styles.description}>{item.description}</Text>
-        )}
-        <Text style={styles.meta}>{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-        <Text style={styles.accountName}>Account: {accountName} ({account?.type})</Text>
-        <TouchableOpacity onPress={() => {
-          setDeleteTarget({ type: 'expense', id: item.id ?? '' });
-          setConfirmVisible(true);
-        }}>
-          <Text style={{ color: 'red', marginTop: 4 }}>Delete</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View>
+            <Text style={styles.title}>{item.category || 'Expense'}</Text>
+            <Text style={styles.itemDetail}>${item.amount} - {item.item || 'No item'}</Text>
+            {item.description && (
+              <Text style={styles.description}>{item.description}</Text>
+            )}
+            <Text style={styles.meta}>{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+            <Text style={styles.accountName}>Account: {accountName} ({account?.type})</Text>
+            <TouchableOpacity onPress={() => {
+              setDeleteTarget({ type: 'expense', id: item.id ?? '' });
+              setConfirmVisible(true);
+            }}>
+              <Text style={{ color: 'red', marginTop: 4 }}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+          <View>
+            {item.photoUri ? (
+              <Image source={{ uri: item.photoUri }} style={{ width: 64, height: 64, borderRadius: 6, marginBottom: 4 }} />
+            ) : null}
+          </View>
+        </View>
       </TouchableOpacity>
     );
   };

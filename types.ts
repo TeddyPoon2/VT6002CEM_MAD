@@ -17,4 +17,5 @@ export type Expense = {
     accountId: string;
     user?: string;
     createdAt?: string;
+    photoUri?: string;
 };

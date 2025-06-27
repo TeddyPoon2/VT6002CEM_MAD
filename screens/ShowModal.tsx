@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Modal,
@@ -38,6 +40,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
     description: '',
     item: '',
     accountId: selectedAccount || undefined,
+    photoUri: '',
   };
   const [expense, setExpense] = useState(expenseFields);
   const [categoryHistory, setCategoryHistory] = useState<string[]>([]);
@@ -66,7 +69,6 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
     setAccount({ ...account, [field]: value });
   };
 
-  // Handler to get current location and fill description
   const handleGetLocation = async () => {
     try {
       setLocLoading(true);
@@ -82,8 +84,6 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
         const geocode = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
         if (geocode && geocode.length > 0) {
           const g = geocode[0];
-          console.log(g);
-          // address = `${g.name || ''} ${g.street || ''} ${g.city || ''} ${g.region || ''} ${g.country || ''}`.replace(/\s+/g, ' ').trim();
           address = g.city || '';
         }
       } catch (e) { }
@@ -98,7 +98,6 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
     }
   };
 
-  // Load histories from AsyncStorage
   React.useEffect(() => {
     (async () => {
       const cat = await AsyncStorage.getItem(CATEGORY_HISTORY_KEY);
@@ -110,7 +109,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
             (h: any) => h && typeof h.category === 'string' && typeof h.item === 'string'
           )
           : []
-      ); // Now array of {category, item} objects
+      );
     })();
   }, [visible]);
 
@@ -124,6 +123,7 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
         description: exp.description || '',
         item: exp.item || '',
         accountId: exp.accountId || selectedAccount || '',
+        photoUri: exp.photoUri || '',
       });
     } else if (type === 'account' && initialData) {
       const acc = initialData as Account;
@@ -162,6 +162,8 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
       onSubmit({
         ...(initialData || {}),
         amount: parseFloat(expense.amount),
+        photoUri: expense.photoUri,
+
         date: expense.date,
         category: expense.category,
         description: expense.description,
@@ -310,6 +312,55 @@ const ShowModal = ({ visible, setVisible, type, initialData, accounts = [], sele
                     value={expense.description}
                     onChangeText={(value) => updateExpenseField('description', value)}
                   />
+                  {/* Photo picker */}
+                  <Text style={styles.label}>Photo</Text>
+                  {expense.photoUri ? (
+                    <View style={{ position: 'relative', width: '100%', marginBottom: 10 }}>
+                      <Image source={{ uri: expense.photoUri }} style={{ width: '100%', height: 240, borderRadius: 6 }} />
+                      <TouchableOpacity
+                        style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, padding: 4, zIndex: 1 }}
+                        onPress={() => updateExpenseField('photoUri', '')}
+                        accessibilityLabel="Delete photo"
+                      >
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                    <TouchableOpacity
+                      style={[styles.button, { flex: 0, marginRight: 10, padding: 8, maxWidth: '45%' }]}
+                      onPress={async () => {
+                        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                        if (status !== 'granted') {
+                          alert('Permission to access media library is required!');
+                          return;
+                        }
+                        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
+                        if (!result.canceled && result.assets && result.assets.length > 0) {
+                          updateExpenseField('photoUri', result.assets[0].uri);
+                        }
+                      }}
+                    >
+                      <Text style={styles.buttonText}>Pick Photo</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.button, { flex: 0, padding: 8, maxWidth: '45%' }]}
+                      onPress={async () => {
+                        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                        if (status !== 'granted') {
+                          alert('Permission to access camera is required!');
+                          return;
+                        }
+                        const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
+                        if (!result.canceled && result.assets && result.assets.length > 0) {
+                          updateExpenseField('photoUri', result.assets[0].uri);
+                        }
+                      }}
+                    >
+                      <Text style={styles.buttonText}>Take Photo</Text>
+                    </TouchableOpacity>
+                  </View>
+
                   <Text style={styles.label}>Account</Text>
                   <View style={{ width: '100%', marginBottom: 10 }}>
                     {accounts.length > 0 ? (
